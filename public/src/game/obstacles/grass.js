@@ -4,7 +4,7 @@ import grassImg from '../../images/grass.png';
 export default class Grass extends Obstacle {
 
   /**
-   * @param {import('.').default} game
+   * @param {import('../').default} game
    * @param {number} x
    * @param {number} y
    */

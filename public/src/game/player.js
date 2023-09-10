@@ -1,5 +1,7 @@
 import charactersImg from '../images/characters.png';
 import { BLOCK_SIZE, Direction } from './const';
+import { Item } from './obstacle';
+import { Bomb } from './obstacles';
 
 export const PLAYER_STATE = {
   Idle: 'idle',
@@ -13,13 +15,13 @@ export default class Player {
   /**
    * @param {import('.').default} game
    */
-  constructor(game) {
+  constructor(game, x, y) {
 
     this.game = game;
     this.ctx = game.ctx;
-    this.x = 0;
-    this.y = 0;
-    this.z = 0;
+    this.x = x;
+    this.y = y;
+    this.z = 1;
     this.img = new Image();
     this.img.src = charactersImg;
     this.sx = 0;
@@ -36,18 +38,19 @@ export default class Player {
     this.directions = [];
     this.velocity = 3;
     this.lastDirection = null;
-    this.destX = 0;
-    this.destY = 0;
+    this.destX = x;
+    this.destY = y;
     this.fpsInterval = 1000 / 60;
     this.timer = 0;
+    this.bombs = [new Bomb(game)];
+    for (let i = 9; 0 <= --i;) {
+      this.bombs.push(new Bomb(game));
+    }
   }
 
   draw() {
 
     if (this.img.complete) {
-      this.sw = this.sw || this.img.width;
-      this.sh = this.sh || this.img.height;
-      this.ctx.strokeRect(this.x, this.y, BLOCK_SIZE, BLOCK_SIZE);
       this.ctx.drawImage(this.img, this.sx + this.sw * this.frameX, this.sy + this.sh * this.frameY, this.sw, this.sh, this.x + this.paddingX, this.y + this.paddingY, this.width, this.height);
     }
   }
@@ -64,7 +67,7 @@ export default class Player {
     if (0 <= idx) this.directions.splice(idx, 1);
   }
 
-  updatePosition(deltaTime) {
+  update(deltaTime) {
 
     if (this.timer < this.fpsInterval) {
 
@@ -83,7 +86,7 @@ export default class Player {
 
       switch (direction) {
         case Direction.Down:
-          if (this.y <= this.game.bottomEdge) {
+          if (this.y <= this.game.bottomEdge && this.canGo(this.x, this.y + BLOCK_SIZE)) {
 
             this.destY = Math.floor(this.y / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
             this.destY = Math.min(this.destY, this.game.bottomEdge);
@@ -95,7 +98,7 @@ export default class Player {
           }
           break;
         case Direction.Up:
-          if (0 <= this.y) {
+          if (0 <= this.y && this.canGo(this.x, this.y - BLOCK_SIZE)) {
 
             this.destY = Math.floor((0 === this.y % BLOCK_SIZE ? this.y : this.y + BLOCK_SIZE) / BLOCK_SIZE) * BLOCK_SIZE - BLOCK_SIZE;
             this.destY = Math.max(this.destY, 0);
@@ -107,7 +110,7 @@ export default class Player {
           }
           break;
         case Direction.Left:
-          if (0 <= this.x) {
+          if (0 <= this.x && this.canGo(this.x - BLOCK_SIZE, this.y)) {
 
             this.destX = Math.floor((0 === this.x % BLOCK_SIZE ? this.x : this.x + BLOCK_SIZE) / BLOCK_SIZE) * BLOCK_SIZE - BLOCK_SIZE;
             this.destX = Math.max(this.destX, 0);
@@ -119,7 +122,7 @@ export default class Player {
           }
           break;
         case Direction.Right:
-          if (this.x <= this.game.rightEdge) {
+          if (this.x <= this.game.rightEdge && this.canGo(this.x + BLOCK_SIZE, this.y)) {
 
             this.destX = Math.floor( this.x / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE;
             this.destX = Math.min(this.destX, this.game.rightEdge);
@@ -187,5 +190,26 @@ export default class Player {
     else {
       this.frameX = 1;
     }
+  }
+
+  canGo(x, y) {
+
+    const items = this.game.map[this.game.getMapIndex(x, y)];
+
+    return undefined !== items && (0 === items.length || items[0] instanceof Item);
+  }
+
+  putBomb() {
+
+    const idx = this.game.getMapIndex(this.x, this.y);
+    const map = this.game.map;
+
+    if (0 === this.bombs.length || undefined === map[idx] || 0 < map[idx].length) {
+      return;
+    }
+
+    const bomb = this.bombs.shift();
+    bomb.activate(this.x, this.y);
+    map[idx].push(bomb);
   }
 }

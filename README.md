@@ -1,4 +1,4 @@
-# Boom online
+# Boom offline
 Memories of a childhood game
 
 ## Build status

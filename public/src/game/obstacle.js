@@ -18,6 +18,7 @@ export class Obstacle {
     this.sy = 0;
     this.sw = 0;
     this.sh = 0;
+    this.isExploded = false;
   }
 
   draw() {
@@ -28,6 +29,8 @@ export class Obstacle {
       this.ctx.drawImage(this.img, this.sx, this.sy, this.sw, this.sh, this.x, this.y, this.width, this.height);
     }
   }
+
+  update(deltaTime) {}
 }
 
 export class Item extends Obstacle {
